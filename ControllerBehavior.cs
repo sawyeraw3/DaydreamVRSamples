@@ -1,11 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 
 /**
  * Sawyer Warden, 2016
- * This script enables teleportation and grab interation with the Daydream View Controller
- * It utilizes material assets and combines dragging methods from the gvr-unity-sdk-master\GoogleVR\DemoScenes\ControllerDemo sample
+ * This script enables teleportation and grab/push/pull interation with the Daydream View Controller
+ * I've tailored and combined dragging methods/material assets from the gvr-unity-sdk-master\GoogleVR\DemoScenes\ControllerDemo sample
  * with point-click teleportation concepts from Same Keene @ http://www.sdkboy.com/2016/10/teleportation-vr-google-daydream/
  */
 
@@ -44,6 +44,8 @@ public class ControllerBehavior : MonoBehaviour {
 
 	// True when selectedObject is being dragged
 	private bool dragging;
+	//Max speed that the selectedObject can be pushed/pulled at
+	float moveSpeed = 30f;
 
 	// Use this for initialization
 	void Start () {
@@ -68,6 +70,17 @@ public class ControllerBehavior : MonoBehaviour {
 			//Check for change in state
 			if (!GvrController.ClickButton) {
 				EndDragging();
+			}
+			//tempVect magnitude used to prevent cursor (parent of selectedObject) from moving too close to the player
+			Vector3 tempVect = (player.transform.position - cursor.transform.position);
+			//If the trackpad is touched in the lower region (and the cursor isn't too close), pull the cursor towards the pointerObject
+			if (tempVect.magnitude >= 4f && GvrController.TouchPos.y >= .55) {
+				Vector3 newVect = (GvrController.TouchPos - new Vector2 (.5f, .5f));
+				cursor.transform.position = Vector3.MoveTowards (cursor.transform.position, barrel.transform.position, newVect.magnitude * (moveSpeed * Time.deltaTime));
+			} else if (GvrController.TouchPos.y <= .45) {
+			//If the trackpad is touched in the upper region, push the cursor away from the pointerObject
+				Vector3 newVect = (GvrController.TouchPos - new Vector2 (.5f, .5f));
+				cursor.transform.position = Vector3.MoveTowards (cursor.transform.position, barrel.transform.position, newVect.magnitude * -(moveSpeed * Time.deltaTime));
 			}
 			//Disable the laser when dragging an object
 			laser.enabled = false;
